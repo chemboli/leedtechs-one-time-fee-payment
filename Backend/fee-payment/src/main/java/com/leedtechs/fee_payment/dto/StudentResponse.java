@@ -1,31 +1,20 @@
-package com.leedtechs.fee_payment.entity;
+package com.leedtechs.fee_payment.dto;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "student_accounts")
-public class StudentAccount {
+public class StudentResponse {
 
-    @Id
-    @Column(name = "student_number", nullable = false, unique = true)
     private String studentNumber;
-
-    @Column(nullable = false)
-    private BigDecimal balance;
-
-    @Column(name = "full_name")
     private String fullName;
-
-    @Column(name = "next_due_date")
+    private BigDecimal balance;
     private LocalDate nextDueDate;
-
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
 
     public String getStudentNumber() { return studentNumber; }
     public void setStudentNumber(String studentNumber) { this.studentNumber = studentNumber; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
     public BigDecimal getBalance() { return balance; }
     public void setBalance(BigDecimal balance) { this.balance = balance; }
