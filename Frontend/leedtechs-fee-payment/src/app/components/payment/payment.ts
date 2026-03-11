@@ -51,8 +51,7 @@ export class PaymentComponent {
     }).subscribe({
       next: (res) => { this.result = res; this.loading = false; },
       error: (err: HttpErrorResponse) => {
-        this.errorMsg = err.error?.message || 'Something went wrong.';
-        this.loading = false;
+        this.errorMsg = err.error?.message || err.error?.error || JSON.stringify(err.error) || 'Something went wrong.';        this.loading = false;
       },
     });
   }

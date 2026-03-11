@@ -45,7 +45,7 @@ export class RegisterComponent {
         this.balance = null;
       },
       error: (err: HttpErrorResponse) => {
-        this.errorMsg = err.error?.message || 'Registration failed. Student may already exist.';
+        this.errorMsg = err.error?.message || err.error?.error || JSON.stringify(err.error) || 'Registration failed. Student may already exist.';
         this.loading = false;
       },
     });

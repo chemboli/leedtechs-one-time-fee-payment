@@ -33,8 +33,7 @@ export class LookupComponent {
     this.paymentService.getStudent(this.studentNumber.trim()).subscribe({
       next: (res) => { this.student = res; this.loading = false; },
       error: (err: HttpErrorResponse) => {
-        this.errorMsg = err.error?.message || 'Student not found.';
-        this.loading = false;
+        this.errorMsg = err.error?.message || err.error?.error || JSON.stringify(err.error) || 'Student not found.';        this.loading = false;
       },
     });
   }
