@@ -1,8 +1,0 @@
-<div class="toast-wrap">
-  @for (toast of toastService.toasts(); track toast.id) {
-    <div class="toast" [class]="toast.type">
-      <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '✕' }}</span>
-      {{ toast.message }}
-    </div>
-  }
-</div>
