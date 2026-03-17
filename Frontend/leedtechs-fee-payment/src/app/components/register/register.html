@@ -1,67 +1,62 @@
-<div style="background:white; border:1px solid #e5e7eb; border-radius:8px; padding:28px 32px;">
-  <h2 style="font-size:17px; font-weight:600; margin-bottom:4px;">Register New Student</h2>
-  <p style="color:#6b7280; font-size:13px; margin-bottom:20px;">Create a new student account with an initial outstanding balance.</p>
+<div class="register-card">
+  <h2 class="card-title">Register New Student</h2>
+  <p class="card-subtitle">Create a new student account with an initial outstanding balance.</p>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-    <div>
-      <label style="font-size:13px; font-weight:500;">Student Number *</label><br/>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Student Number *</label>
       <input
         type="text"
         [(ngModel)]="studentNumber"
-        placeholder="e.g. LT26A001"
-        style="width:100%; padding:10px 14px; margin-top:6px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px; outline:none;"
+        placeholder="e.g. STU-2024-001"
+        class="form-input"
       />
     </div>
-    <div>
-      <label style="font-size:13px; font-weight:500;">Full Name *</label><br/>
+    <div class="form-group">
+      <label class="form-label">Full Name *</label>
       <input
         type="text"
         [(ngModel)]="fullName"
-        placeholder="e.g. Chemboli Roy"
-        style="width:100%; padding:10px 14px; margin-top:6px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px; outline:none;"
+        placeholder="e.g. Jean-Paul Mbarga"
+        class="form-input"
       />
     </div>
   </div>
 
-  <div style="margin-top:16px; max-width:300px;">
-    <label style="font-size:13px; font-weight:500;">Initial Balance (XAF) *</label><br/>
+  <div class="form-group" style="max-width: 300px;">
+    <label class="form-label">Initial Balance (XAF) *</label>
     <input
       type="number"
       [(ngModel)]="balance"
       placeholder="e.g. 500000"
       min="1"
-      style="width:100%; padding:10px 14px; margin-top:6px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px; outline:none;"
+      class="form-input"
     />
   </div>
 
-  <button
-    (click)="submit()"
-    [disabled]="loading"
-    style="margin-top:20px; padding:10px 22px; background:#e07320; color:white; border:none; border-radius:6px; font-weight:600; font-size:14px; cursor:pointer;">
+  <button class="submit-btn" (click)="submit()" [disabled]="loading">
     {{ loading ? 'Registering...' : 'Register Student' }}
   </button>
 
   @if (errorMsg) {
-    <div style="margin-top:16px; padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; color:#dc2626; font-size:13px;">
-      ❌ {{ errorMsg }}
-    </div>
+    <div class="alert alert-error">❌ {{ errorMsg }}</div>
   }
 
   @if (result) {
-    <div style="margin-top:16px; padding:14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; color:#16a34a;">
-      <div style="font-size:14px; font-weight:600; margin-bottom:12px;">✅ Student Registered Successfully</div>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-        <div style="background:white; border:1px solid #e5e7eb; border-radius:6px; padding:10px 14px;">
-          <div style="font-size:11px; text-transform:uppercase; color:#6b7280; margin-bottom:4px;">Student ID</div>
-          <div style="font-size:15px; font-weight:600; color:#1a1a2e;">{{ result.studentNumber }}</div>
+    <div class="alert alert-success">
+      <div class="alert-title">✅ Student Registered Successfully</div>
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="result-label">Student ID</div>
+          <div class="result-value">{{ result.studentNumber }}</div>
         </div>
-        <div style="background:white; border:1px solid #e5e7eb; border-radius:6px; padding:10px 14px;">
-          <div style="font-size:11px; text-transform:uppercase; color:#6b7280; margin-bottom:4px;">Full Name</div>
-          <div style="font-size:15px; font-weight:600; color:#1a1a2e;">{{ result.fullName }}</div>
+        <div class="result-item">
+          <div class="result-label">Full Name</div>
+          <div class="result-value">{{ result.fullName }}</div>
         </div>
-        <div style="background:white; border:1px solid #e5e7eb; border-radius:6px; padding:10px 14px;">
-          <div style="font-size:11px; text-transform:uppercase; color:#6b7280; margin-bottom:4px;">Balance</div>
-          <div style="font-size:15px; font-weight:600; color:#e07320;">{{ fmt.cfa(result.balance) }}</div>
+        <div class="result-item">
+          <div class="result-label">Balance</div>
+          <div class="result-value orange">{{ fmt.cfa(result.balance) }}</div>
         </div>
       </div>
     </div>

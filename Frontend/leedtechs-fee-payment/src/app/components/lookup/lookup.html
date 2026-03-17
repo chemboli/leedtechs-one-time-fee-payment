@@ -1,45 +1,39 @@
-<div style="background:white; border:1px solid #e5e7eb; border-radius:8px; padding:28px 32px;">
-  <h2 style="font-size:17px; font-weight:600; margin-bottom:4px;">Student Lookup</h2>
-  <p style="color:#6b7280; font-size:13px; margin-bottom:20px;">Search for a student to view their balance and next payment due date.</p>
+<div class="lookup-card">
+  <h2 class="card-title">Student Lookup</h2>
+  <p class="card-subtitle">Search for a student to view their balance and next payment due date.</p>
 
-  <div style="display:flex; gap:12px; align-items:flex-end;">
-    <div style="flex:1;">
-      <label style="font-size:13px; font-weight:500;">Student Number</label><br/>
+  <div class="search-row">
+    <div class="form-group">
+      <label class="form-label">Student Number</label>
       <input
         type="text"
         [(ngModel)]="studentNumber"
         (keydown)="onKeydown($event)"
         placeholder="e.g. STU-2024-001"
-        style="width:100%; padding:10px 14px; margin-top:6px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px; outline:none;"
+        class="form-input"
       />
     </div>
-    <button
-      (click)="search()"
-      [disabled]="loading"
-      style="padding:10px 22px; background:#e07320; color:white; border:none; border-radius:6px; font-weight:600; font-size:14px; cursor:pointer;">
+    <button class="search-btn" (click)="search()" [disabled]="loading">
       {{ loading ? 'Searching...' : 'Search' }}
     </button>
   </div>
 
   @if (errorMsg) {
-    <div style="margin-top:16px; padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; color:#dc2626; font-size:13px;">
-      ❌ {{ errorMsg }}
-    </div>
+    <div class="alert-error">❌ {{ errorMsg }}</div>
   }
 
   @if (student) {
-    <div style="margin-top:20px; background:#f5f6fa; border:1px solid #e5e7eb; border-radius:8px; padding:20px 24px;">
-      <div style="font-size:18px; font-weight:700; color:#1a1a2e;">{{ student.fullName }}</div>
-      <div style="font-size:12px; color:#6b7280; margin-bottom:16px;">Student ID: {{ student.studentNumber }}</div>
-
-      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:14px; border-top:1px solid #e5e7eb;">
+    <div class="profile-box">
+      <div class="profile-name">{{ student.fullName }}</div>
+      <div class="profile-id">Student ID: {{ student.studentNumber }}</div>
+      <div class="balance-row">
         <div>
-          <div style="font-size:11px; text-transform:uppercase; color:#6b7280; margin-bottom:4px;">Outstanding Balance</div>
-          <div style="font-size:20px; font-weight:700; color:#e07320;">{{ fmt.cfa(student.balance) }}</div>
+          <div class="balance-label">Outstanding Balance</div>
+          <div class="balance-amount">{{ fmt.cfa(student.balance) }}</div>
         </div>
         <div>
-          <div style="font-size:11px; text-transform:uppercase; color:#6b7280; margin-bottom:4px;">Next Payment Due</div>
-          <div style="font-size:15px; font-weight:600; color:#1a1a2e;">
+          <div class="balance-label">Next Payment Due</div>
+          <div class="due-value">
             {{ student.nextDueDate ? fmt.date(student.nextDueDate) : 'No pending balance' }}
           </div>
         </div>

@@ -1,71 +1,73 @@
-<div style="background:white; border:1px solid #e5e7eb; border-radius:8px; padding:28px 32px;">
-  <h2 style="font-size:17px; font-weight:600; margin-bottom:4px;">One-Time Fee Payment</h2>
-  <p style="color:#6b7280; font-size:13px; margin-bottom:20px;">Enter the student number and amount in XAF.</p>
+<div class="payment-card">
+  <h2 class="card-title">One-Time Fee Payment</h2>
+  <p class="card-subtitle">Enter the student number and amount in XAF.</p>
 
-  <label>Student Number *</label><br/>
-  <input type="text" [(ngModel)]="studentNumber" placeholder="e.g. STU-2024-001" style="width:100%; padding:10px; margin:6px 0 16px; border:1px solid #e5e7eb; border-radius:6px;" /><br/>
+  <div class="form-group">
+    <label class="form-label">Student Number *</label>
+    <input type="text" [(ngModel)]="studentNumber" placeholder="e.g. STU-2024-001" class="form-input" />
+  </div>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+  <div class="form-row" style="margin-top: 16px;">
     <div>
-      <label>Payment Amount (XAF) *</label><br/>
-      <input type="number" [(ngModel)]="paymentAmount" placeholder="e.g. 150000" style="width:100%; padding:10px; margin:6px 0 4px; border:1px solid #e5e7eb; border-radius:6px;" />
+      <label class="form-label">Payment Amount (XAF) *</label>
+      <input type="number" [(ngModel)]="paymentAmount" placeholder="e.g. 150000" class="form-input" />
       @if (paymentAmount && paymentAmount > 0) {
-        <small style="color:#6b7280;">
+        <small class="hint">
           Incentive: {{ fmt.cfa(incentivePreview) }} (Tier {{ activeTier }} · {{ fmt.getIncentiveTier(paymentAmount).label }})
         </small>
       }
     </div>
     <div>
-      <label>Payment Date (optional)</label><br/>
-      <input type="date" [(ngModel)]="paymentDate" style="width:100%; padding:10px; margin:6px 0; border:1px solid #e5e7eb; border-radius:6px;" />
+      <label class="form-label">Payment Date (optional)</label>
+      <input type="date" [(ngModel)]="paymentDate" class="form-input" />
     </div>
   </div>
 
-  <!-- Tier table -->
-  <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:20px;">
-    <tr style="background:#f5f6fa;">
-      <th style="padding:8px; border:1px solid #e5e7eb; text-align:left;">Tier</th>
-      <th style="padding:8px; border:1px solid #e5e7eb; text-align:left;">Amount</th>
-      <th style="padding:8px; border:1px solid #e5e7eb; text-align:left;">Rate</th>
+  <table class="tier-table">
+    <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Amount</th>
+      <th>Rate</th>
     </tr>
-    <tr [style.background]="activeTier===1 ? 'rgba(224,115,32,0.08)' : ''">
-      <td style="padding:8px; border:1px solid #e5e7eb;">Tier 1</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">Less than 100 000 XAF</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">1%</td>
+    </thead>
+    <tbody>
+    <tr [class.active]="activeTier === 1">
+      <td>Tier 1</td>
+      <td>Less than 100 000 XAF</td>
+      <td>1%</td>
     </tr>
-    <tr [style.background]="activeTier===2 ? 'rgba(224,115,32,0.08)' : ''">
-      <td style="padding:8px; border:1px solid #e5e7eb;">Tier 2</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">100 000 – 499 999 XAF</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">3%</td>
+    <tr [class.active]="activeTier === 2">
+      <td>Tier 2</td>
+      <td>100 000 – 499 999 XAF</td>
+      <td>3%</td>
     </tr>
-    <tr [style.background]="activeTier===3 ? 'rgba(224,115,32,0.08)' : ''">
-      <td style="padding:8px; border:1px solid #e5e7eb;">Tier 3</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">500 000 XAF and above</td>
-      <td style="padding:8px; border:1px solid #e5e7eb;">5%</td>
+    <tr [class.active]="activeTier === 3">
+      <td>Tier 3</td>
+      <td>500 000 XAF and above</td>
+      <td>5%</td>
     </tr>
+    </tbody>
   </table>
 
-  <button (click)="submit()" [disabled]="loading"
-          style="margin-top:20px; padding:10px 22px; background:#e07320; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+  <button class="submit-btn" (click)="submit()" [disabled]="loading">
     {{ loading ? 'Processing...' : 'Process Payment' }}
   </button>
 
   @if (errorMsg) {
-    <div style="margin-top:16px; padding:14px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; color:#dc2626;">
-      ❌ {{ errorMsg }}
-    </div>
+    <div class="alert alert-error">❌ {{ errorMsg }}</div>
   }
 
   @if (result) {
-    <div style="margin-top:16px; padding:14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; color:#16a34a;">
+    <div class="alert alert-success">
       <strong>✅ Payment Processed</strong>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px;">
-        <div><small>Previous Balance</small><br/><strong>{{ fmt.cfa(result.previousBalance) }}</strong></div>
-        <div><small>Payment Amount</small><br/><strong>{{ fmt.cfa(result.paymentAmount) }}</strong></div>
-        <div><small>Incentive Rate</small><br/><strong>{{ (result.incentiveRate * 100).toFixed(0) }}%</strong></div>
-        <div><small>Incentive Amount</small><br/><strong>{{ fmt.cfa(result.incentiveAmount) }}</strong></div>
-        <div><small>New Balance</small><br/><strong>{{ fmt.cfa(result.newBalance) }}</strong></div>
-        <div><small>Next Due Date</small><br/><strong>{{ result.nextPaymentDueDate ? fmt.date(result.nextPaymentDueDate) : 'Fully Paid ✓' }}</strong></div>
+      <div class="result-grid">
+        <div class="result-item"><small>Previous Balance</small><br/><strong>{{ fmt.cfa(result.previousBalance) }}</strong></div>
+        <div class="result-item"><small>Payment Amount</small><br/><strong>{{ fmt.cfa(result.paymentAmount) }}</strong></div>
+        <div class="result-item"><small>Incentive Rate</small><br/><strong>{{ (result.incentiveRate * 100).toFixed(0) }}%</strong></div>
+        <div class="result-item"><small>Incentive Amount</small><br/><strong>{{ fmt.cfa(result.incentiveAmount) }}</strong></div>
+        <div class="result-item"><small>New Balance</small><br/><strong>{{ fmt.cfa(result.newBalance) }}</strong></div>
+        <div class="result-item"><small>Next Due Date</small><br/><strong>{{ result.nextPaymentDueDate ? fmt.date(result.nextPaymentDueDate) : 'Fully Paid ✓' }}</strong></div>
       </div>
     </div>
   }
