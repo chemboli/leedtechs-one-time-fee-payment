@@ -43,12 +43,23 @@ public class PaymentService {
                 ? request.getPaymentDate()
                 : LocalDate.now();
 
-        // Calculate incentive
+        // Compute incentive rate
         BigDecimal rate = IncentiveCalculator.getRate(request.getPaymentAmount());
-        BigDecimal incentive = request.getPaymentAmount().multiply(rate);
+
+        // --- NEW LOGIC: Adjust payment if trying to pay full balance ---
+        BigDecimal paymentAmount = request.getPaymentAmount();
+        BigDecimal incentiveAmount;
+
+        if (paymentAmount.compareTo(previousBalance) >= 0) {
+            // Solve paymentAmount so that payment + incentive = balance
+            paymentAmount = previousBalance.divide(BigDecimal.ONE.add(rate), 2, BigDecimal.ROUND_HALF_UP);
+            incentiveAmount = paymentAmount.multiply(rate).setScale(2, BigDecimal.ROUND_HALF_UP);
+        } else {
+            incentiveAmount = paymentAmount.multiply(rate).setScale(2, BigDecimal.ROUND_HALF_UP);
+        }
 
         // Calculate new balance (floor at zero)
-        BigDecimal totalDeduction = request.getPaymentAmount().add(incentive);
+        BigDecimal totalDeduction = paymentAmount.add(incentiveAmount);
         BigDecimal newBalance = previousBalance.subtract(totalDeduction);
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
             newBalance = BigDecimal.ZERO;
@@ -67,9 +78,9 @@ public class PaymentService {
         // Save payment record
         FeePayment payment = new FeePayment();
         payment.setStudentNumber(request.getStudentNumber());
-        payment.setPaymentAmount(request.getPaymentAmount());
+        payment.setPaymentAmount(paymentAmount);
         payment.setIncentiveRate(rate);
-        payment.setIncentiveAmount(incentive);
+        payment.setIncentiveAmount(incentiveAmount);
         payment.setPaymentDate(paymentDate);
         paymentRepo.save(payment);
 
@@ -77,9 +88,9 @@ public class PaymentService {
         OneTimePaymentResponse response = new OneTimePaymentResponse();
         response.setStudentNumber(request.getStudentNumber());
         response.setPreviousBalance(previousBalance);
-        response.setPaymentAmount(request.getPaymentAmount());
+        response.setPaymentAmount(paymentAmount);
         response.setIncentiveRate(rate);
-        response.setIncentiveAmount(incentive);
+        response.setIncentiveAmount(incentiveAmount);
         response.setNewBalance(newBalance);
         response.setNextPaymentDueDate(nextDueDate);
 
