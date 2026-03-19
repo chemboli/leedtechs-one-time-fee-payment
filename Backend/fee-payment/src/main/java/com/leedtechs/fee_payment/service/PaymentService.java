@@ -64,7 +64,7 @@ public class PaymentService {
             incentiveAmount = previousBalance.subtract(actualPayment);
 
         } else {
-            // --- PARTIAL PAYMENT ---
+            //PARTIAL PAYMENT
             actualPayment = requestedAmount;
 
             incentiveAmount = actualPayment
@@ -110,9 +110,8 @@ public class PaymentService {
         );
     }
 
-    // =========================
+
     // Helper Methods
-    // =========================
 
     private void validateRequest(OneTimePaymentRequest request) {
         if (request == null) {

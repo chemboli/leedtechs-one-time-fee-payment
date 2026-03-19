@@ -46,9 +46,6 @@ class StudentServiceTest {
         return account;
     }
 
-    // ─────────────────────────────────────────
-    // CREATE STUDENT TESTS
-    // ─────────────────────────────────────────
 
     @Test
     void createStudent_success() {
@@ -80,9 +77,6 @@ class StudentServiceTest {
         verify(studentRepo, never()).save(any());
     }
 
-    // ─────────────────────────────────────────
-    // GET STUDENT TESTS
-    // ─────────────────────────────────────────
 
     @Test
     void getStudent_success() {

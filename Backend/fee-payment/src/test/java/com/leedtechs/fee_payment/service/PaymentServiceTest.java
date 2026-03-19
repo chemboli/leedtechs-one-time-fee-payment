@@ -98,7 +98,7 @@ class PaymentServiceTest {
     void fullPayment_adjustedByIncentive() {
         StudentAccount account = buildAccount("A6", new BigDecimal("50000"));
 
-        BigDecimal originalBalance = account.getBalance(); // ✅ store before mutation
+        BigDecimal originalBalance = account.getBalance(); // store before mutation
 
         when(studentRepo.findById("A6")).thenReturn(Optional.of(account));
         when(studentRepo.save(any())).thenReturn(account);
