@@ -41,8 +41,8 @@ This project is a full-stack application designed to manage student one-time fee
 
 ```
 leedtech-student-fee-payment
-├── backend   # Spring Boot application
-├── frontend  # Angular application
+├── Backend   # Spring Boot application
+├── Frontend  # Angular application
 └── README.md
 ```
 
@@ -68,6 +68,7 @@ Make sure you have the following installed:
 
    ```bash
    cd backend
+   cd fee-payment
    ```
 
 2. The application uses an in-memory H2 database by default, so no external database setup is required.
@@ -108,7 +109,8 @@ Make sure you have the following installed:
 1. Navigate to the frontend folder:
 
    ```bash
-   cd frontend
+   cd Frontend
+   cd leedtechs-fee-payment
    ```
 
 2. Install dependencies:

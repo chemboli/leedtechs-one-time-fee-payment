@@ -121,3 +121,7 @@
 .result-value.orange {
   color: #e07320;
 }
+.required {
+  color: red;
+  font-weight: bold;
+}

@@ -3,13 +3,13 @@
   <p class="card-subtitle">Enter the student number and amount in XAF.</p>
 
   <div class="form-group">
-    <label class="form-label">Student Number *</label>
+    <label class="form-label">Student Number <span class="required">*</span></label>
     <input type="text" [(ngModel)]="studentNumber" placeholder="e.g. STU-2024-001" class="form-input" />
   </div>
 
   <div class="form-row" style="margin-top: 16px;">
     <div>
-      <label class="form-label">Payment Amount (XAF) *</label>
+      <label class="form-label">Payment Amount (XAF)<span class="required">*</span> </label>
       <input type="number" [(ngModel)]="paymentAmount" placeholder="e.g. 150000" class="form-input" />
       @if (paymentAmount && paymentAmount > 0) {
         <small class="hint">
