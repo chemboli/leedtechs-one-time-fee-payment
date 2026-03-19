@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -69,33 +70,6 @@ class PaymentServiceTest {
     }
 
     @Test
-    void balanceDoesNotGoBelowZero() {
-        StudentAccount account = buildAccount("A3", new BigDecimal("100"));
-        when(studentRepo.findById("A3")).thenReturn(Optional.of(account));
-        when(studentRepo.save(any())).thenReturn(account);
-        when(paymentRepo.save(any())).thenReturn(new FeePayment());
-
-        OneTimePaymentRequest req = buildRequest("A3", "99999", "2026-03-10");
-        OneTimePaymentResponse res = paymentService.process(req);
-
-        // use compareTo to avoid scale mismatch
-        assertEquals(0, res.getNewBalance().compareTo(BigDecimal.ZERO));
-    }
-
-    @Test
-    void noDueDateWhenBalanceIsZero() {
-        StudentAccount account = buildAccount("A4", new BigDecimal("1000"));
-        when(studentRepo.findById("A4")).thenReturn(Optional.of(account));
-        when(studentRepo.save(any())).thenReturn(account);
-        when(paymentRepo.save(any())).thenReturn(new FeePayment());
-
-        OneTimePaymentRequest req = buildRequest("A4", "99999", "2026-03-10");
-        OneTimePaymentResponse res = paymentService.process(req);
-
-        assertNull(res.getNextPaymentDueDate());
-    }
-
-    @Test
     void studentNotFound_throwsException() {
         when(studentRepo.findById("INVALID")).thenReturn(Optional.empty());
         OneTimePaymentRequest req = buildRequest("INVALID", "1000", "2026-03-10");
@@ -122,21 +96,55 @@ class PaymentServiceTest {
 
     @Test
     void fullPayment_adjustedByIncentive() {
-        // Chemboli: student has 50000 balance and wants to pay full
         StudentAccount account = buildAccount("A6", new BigDecimal("50000"));
+
+        BigDecimal originalBalance = account.getBalance(); // ✅ store before mutation
+
         when(studentRepo.findById("A6")).thenReturn(Optional.of(account));
         when(studentRepo.save(any())).thenReturn(account);
         when(paymentRepo.save(any())).thenReturn(new FeePayment());
 
         OneTimePaymentRequest req = new OneTimePaymentRequest();
         req.setStudentNumber("A6");
-        req.setPaymentAmount(new BigDecimal("50000")); // wants to pay full
+        req.setPaymentAmount(new BigDecimal("50000"));
 
         OneTimePaymentResponse res = paymentService.process(req);
 
-        // Incentive is deducted from payment to avoid negative balance
+        BigDecimal expectedRate = res.getIncentiveRate();
+        BigDecimal expectedPayment = originalBalance
+                .divide(BigDecimal.ONE.add(expectedRate), 2, RoundingMode.HALF_UP);
+        BigDecimal expectedIncentive = originalBalance.subtract(expectedPayment);
+
+        //  Use originalBalance instead of mutated account
+        assertEquals(0, res.getPreviousBalance().compareTo(originalBalance));
+        assertEquals(0, res.getPaymentAmount().compareTo(expectedPayment));
+        assertEquals(0, res.getIncentiveAmount().compareTo(expectedIncentive));
         assertEquals(0, res.getNewBalance().compareTo(BigDecimal.ZERO));
-        assertTrue(res.getPaymentAmount().compareTo(BigDecimal.ZERO) > 0);
-        assertTrue(res.getIncentiveAmount().compareTo(BigDecimal.ZERO) > 0);
+    }
+    @Test
+    void overPayment_throwsException() {
+        StudentAccount account = buildAccount("A7", new BigDecimal("800000"));
+        when(studentRepo.findById("A7")).thenReturn(Optional.of(account));
+
+        OneTimePaymentRequest req = new OneTimePaymentRequest();
+        req.setStudentNumber("A7");
+        req.setPaymentAmount(new BigDecimal("1000000")); // more than balance
+
+        // Overpayment should throw exception
+        assertThrows(IllegalArgumentException.class, () -> paymentService.process(req));
+    }
+
+    @Test
+    void noDueDateWhenBalanceIsZero() {
+        StudentAccount account = buildAccount("A4", new BigDecimal("1000"));
+        when(studentRepo.findById("A4")).thenReturn(Optional.of(account));
+        when(studentRepo.save(any())).thenReturn(account);
+        when(paymentRepo.save(any())).thenReturn(new FeePayment());
+
+        OneTimePaymentRequest req = buildRequest("A4", "1000", "2026-03-10");
+        OneTimePaymentResponse res = paymentService.process(req);
+
+        assertNull(res.getNextPaymentDueDate());
+        assertEquals(0, res.getNewBalance().compareTo(BigDecimal.ZERO));
     }
 }

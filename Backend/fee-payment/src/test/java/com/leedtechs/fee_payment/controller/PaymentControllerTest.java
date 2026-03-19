@@ -16,13 +16,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Written by Chemboli Roy
 @ExtendWith(SpringExtension.class)
 class PaymentControllerTest {
 
@@ -39,12 +39,10 @@ class PaymentControllerTest {
         MockitoAnnotations.openMocks(this);
         paymentController = new PaymentController(paymentService);
 
-        // Initialize ObjectMapper with JavaTimeModule for LocalDate
         objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // Include GlobalExceptionHandler so errors return JSON
         mockMvc = MockMvcBuilders.standaloneSetup(paymentController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -119,6 +117,55 @@ class PaymentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.newBalance").value(495000))
                 .andExpect(jsonPath("$.nextPaymentDueDate").value(LocalDate.now().toString()));
+
+        verify(paymentService).process(any(OneTimePaymentRequest.class));
+    }
+
+    // Overpayment is rejected
+    @Test
+    void processPayment_overPayment_throwsException() throws Exception {
+        OneTimePaymentRequest request = new OneTimePaymentRequest();
+        request.setStudentNumber("A3");
+        request.setPaymentAmount(new BigDecimal("1000000")); // more than balance
+
+        when(paymentService.process(any(OneTimePaymentRequest.class)))
+                .thenThrow(new IllegalArgumentException("Payment exceeds remaining balance. Balance: 800000"));
+
+        mockMvc.perform(post("/one-time-fee-payment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error")
+                        .value("Payment exceeds remaining balance. Balance: 800000"));
+
+        verify(paymentService).process(any(OneTimePaymentRequest.class));
+    }
+    @Test
+    void processPayment_exactBalance_deductsIncentive() throws Exception {
+        OneTimePaymentRequest request = new OneTimePaymentRequest();
+        request.setStudentNumber("A7");
+        request.setPaymentAmount(new BigDecimal("50000")); // full balance
+
+        BigDecimal rate = new BigDecimal("0.03");
+        BigDecimal adjustedPayment = new BigDecimal("50000").divide(BigDecimal.ONE.add(rate), 2, RoundingMode.HALF_UP);
+        BigDecimal incentive = new BigDecimal("50000").subtract(adjustedPayment);
+
+        OneTimePaymentResponse response = new OneTimePaymentResponse();
+        response.setPreviousBalance(new BigDecimal("50000"));
+        response.setPaymentAmount(adjustedPayment);
+        response.setIncentiveAmount(incentive);
+        response.setIncentiveRate(rate);
+        response.setNewBalance(BigDecimal.ZERO);
+
+        when(paymentService.process(any(OneTimePaymentRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/one-time-fee-payment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentAmount").value(adjustedPayment.doubleValue()))
+                .andExpect(jsonPath("$.incentiveAmount").value(incentive.doubleValue()))
+                .andExpect(jsonPath("$.newBalance").value(0));
 
         verify(paymentService).process(any(OneTimePaymentRequest.class));
     }

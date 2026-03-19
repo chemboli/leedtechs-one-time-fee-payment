@@ -8,11 +8,11 @@ import com.leedtechs.fee_payment.repository.FeePaymentRepository;
 import com.leedtechs.fee_payment.repository.StudentAccountRepository;
 import com.leedtechs.fee_payment.util.DueDateCalculator;
 import com.leedtechs.fee_payment.util.IncentiveCalculator;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 @Service
@@ -30,70 +30,122 @@ public class PaymentService {
     @Transactional
     public OneTimePaymentResponse process(OneTimePaymentRequest request) {
 
-        // Fetch student account
+        validateRequest(request);
+
         StudentAccount account = studentRepo
                 .findById(request.getStudentNumber())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Student not found: " + request.getStudentNumber()));
 
         BigDecimal previousBalance = account.getBalance();
+        BigDecimal requestedAmount = request.getPaymentAmount();
 
-        // Determine payment date (use provided or default to today)
-        LocalDate paymentDate = request.getPaymentDate() != null
+        LocalDate paymentDate = (request.getPaymentDate() != null)
                 ? request.getPaymentDate()
                 : LocalDate.now();
 
-        // Compute incentive rate
-        BigDecimal rate = IncentiveCalculator.getRate(request.getPaymentAmount());
-
-        // --- NEW LOGIC: Adjust payment if trying to pay full balance ---
-        BigDecimal paymentAmount = request.getPaymentAmount();
-        BigDecimal incentiveAmount;
-
-        if (paymentAmount.compareTo(previousBalance) >= 0) {
-            // Solve paymentAmount so that payment + incentive = balance
-            paymentAmount = previousBalance.divide(BigDecimal.ONE.add(rate), 2, BigDecimal.ROUND_HALF_UP);
-            incentiveAmount = paymentAmount.multiply(rate).setScale(2, BigDecimal.ROUND_HALF_UP);
-        } else {
-            incentiveAmount = paymentAmount.multiply(rate).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // OVERPAYMENT CHECK
+        if (requestedAmount.compareTo(previousBalance) > 0) {
+            throw new IllegalArgumentException(
+                    "Payment exceeds remaining balance. Balance: " + previousBalance);
         }
 
-        // Calculate new balance (floor at zero)
-        BigDecimal totalDeduction = paymentAmount.add(incentiveAmount);
-        BigDecimal newBalance = previousBalance.subtract(totalDeduction);
+        BigDecimal rate = IncentiveCalculator.getRate(requestedAmount);
+        BigDecimal actualPayment;
+        BigDecimal incentiveAmount;
+
+        // FULL PAYMENT CASE
+        if (requestedAmount.compareTo(previousBalance) == 0) {
+
+            // Recalculate payment so payment + incentive = balance
+            actualPayment = previousBalance.divide(
+                    BigDecimal.ONE.add(rate), 2, RoundingMode.HALF_UP);
+
+            incentiveAmount = previousBalance.subtract(actualPayment);
+
+        } else {
+            // --- PARTIAL PAYMENT ---
+            actualPayment = requestedAmount;
+
+            incentiveAmount = actualPayment
+                    .multiply(rate)
+                    .setScale(2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal newBalance = previousBalance.subtract(
+                actualPayment.add(incentiveAmount));
+
+        // Safety clamp
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
             newBalance = BigDecimal.ZERO;
         }
 
-        // Calculate next due date (only if balance remains)
-        LocalDate nextDueDate = newBalance.compareTo(BigDecimal.ZERO) > 0
+        LocalDate nextDueDate = (newBalance.compareTo(BigDecimal.ZERO) > 0)
                 ? DueDateCalculator.calculate(paymentDate)
                 : null;
 
-        // Update account
+        // UPDATE ACCOUNT
         account.setBalance(newBalance);
         account.setNextDueDate(nextDueDate);
         studentRepo.save(account);
 
-        // Save payment record
+        // SAVE PAYMENT
         FeePayment payment = new FeePayment();
         payment.setStudentNumber(request.getStudentNumber());
-        payment.setPaymentAmount(paymentAmount);
+        payment.setPaymentAmount(actualPayment);
         payment.setIncentiveRate(rate);
         payment.setIncentiveAmount(incentiveAmount);
         payment.setPaymentDate(paymentDate);
         paymentRepo.save(payment);
 
-        // Build response
+        // BUILD RESPONSE
+        return buildResponse(
+                request.getStudentNumber(),
+                previousBalance,
+                actualPayment,
+                rate,
+                incentiveAmount,
+                newBalance,
+                nextDueDate
+        );
+    }
+
+    // =========================
+    // Helper Methods
+    // =========================
+
+    private void validateRequest(OneTimePaymentRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+
+        if (request.getStudentNumber() == null || request.getStudentNumber().isBlank()) {
+            throw new IllegalArgumentException("Student number is required");
+        }
+
+        if (request.getPaymentAmount() == null
+                || request.getPaymentAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Payment amount must be greater than zero");
+        }
+    }
+
+    private OneTimePaymentResponse buildResponse(
+            String studentNumber,
+            BigDecimal previousBalance,
+            BigDecimal paymentAmount,
+            BigDecimal rate,
+            BigDecimal incentiveAmount,
+            BigDecimal newBalance,
+            LocalDate nextDueDate
+    ) {
         OneTimePaymentResponse response = new OneTimePaymentResponse();
-        response.setStudentNumber(request.getStudentNumber());
+        response.setStudentNumber(studentNumber);
         response.setPreviousBalance(previousBalance);
         response.setPaymentAmount(paymentAmount);
         response.setIncentiveRate(rate);
         response.setIncentiveAmount(incentiveAmount);
         response.setNewBalance(newBalance);
         response.setNextPaymentDueDate(nextDueDate);
-
         return response;
     }
 }
